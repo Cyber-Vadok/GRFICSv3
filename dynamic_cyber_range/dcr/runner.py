@@ -13,6 +13,7 @@ import json
 import pathlib
 import sys
 
+from . import metrics
 from .core import Agent, Executor, parse_action
 from .llm import LLMClient
 from .prompts import blue_system_prompt, red_system_prompt
@@ -143,16 +144,37 @@ def run(scenario: dict, options: dict) -> pathlib.Path:
     else:
         raise SystemExit(f"Unknown mode '{mode}' (expected 'static' or 'dynamic').")
 
-    _write_summary(run_dir, scenario, tx)
+    # Score the run against the flag scheme + OT process state.
+    base_dir = pathlib.Path(options.get("base_dir", run_dir.parent.parent))
+    flags_state = metrics.load_flags_state(scenario, base_dir)
+    if flags_state is None:
+        _say("sys", "metrics", "no flag manifest/state found; scoring skipped "
+             "(run flags/plant_flags.py and add a flags: block to the scenario)")
+        m = None
+    else:
+        m = metrics.compute(tx.events, scenario, flags_state, dry_run=dry_run)
+        (run_dir / "metrics.json").write_text(json.dumps(m, ensure_ascii=False, indent=2))
+        a = m["attacker"]
+        line = (f"attacker {a['flags_captured']}/{a['flags_total']} flags "
+                f"({a['attacker_success_pct']}% success), OT impact={'YES' if a['ot_impact'] else 'no'}"
+                f", 1st flag={a['time_to_first_flag_min']} min")
+        if "defender" in m:
+            line += f" | defender denied {m['defender']['defender_success_pct']}%"
+        _say("sys", "metrics", line)
+
+    _write_summary(run_dir, scenario, tx, m)
     tx.close()
-    _say("sys", "done", f"transcript + summary in {run_dir}")
+    _say("sys", "done", f"transcript + summary + metrics in {run_dir}")
     return run_dir
 
 
-def _write_summary(run_dir: pathlib.Path, scenario: dict, tx: Transcript):
+def _write_summary(run_dir: pathlib.Path, scenario: dict, tx: Transcript, m: dict | None = None):
     lines = [f"# Run summary — {scenario.get('name','')}", "",
              f"- mode: `{scenario.get('mode')}`",
              f"- events: {len(tx.events)}", ""]
+    if m is not None:
+        lines.append(metrics.to_markdown(m))
+        lines.append("")
     for role in ("red", "blue"):
         actions = [e for e in tx.events if e.get("role") == role and e.get("kind") == "action"]
         if not actions:

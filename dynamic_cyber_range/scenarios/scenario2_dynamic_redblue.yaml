@@ -82,6 +82,10 @@ blue:
     layer is OUT OF SCOPE. Work quickly; the attacker starts soon. Record each
     defensive action with the report tool. Begin with your baseline assessment.
 
+flags:
+  manifest: flags/flags_manifest.yaml   # where the flags live + OT impact detector
+  state: flags/flags_state.json         # tokens planted by flags/plant_flags.py (ground truth)
+
 limits:
   max_turns_per_agent: 8
   shell_timeout_sec: 60

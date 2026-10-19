@@ -68,7 +68,12 @@ def main():
     ap.add_argument("--mock-port", type=int, default=MOCK_DEFAULT_PORT)
     ap.add_argument("--max-steps", type=int, default=None,
                     help="override limits.max_turns_per_agent in the scenario")
+    ap.add_argument("--plant-flags", action="store_true",
+                    help="(re)plant fresh flag tokens into the containers before running")
     args = ap.parse_args()
+
+    if args.plant_flags:
+        subprocess.run([sys.executable, str(BASE / "flags" / "plant_flags.py")], check=True)
 
     scenario_path = args.scenario
     if not pathlib.Path(scenario_path).exists():
@@ -99,6 +104,7 @@ def main():
         "temperature": args.temperature,
         "dry_run": args.dry_run,
         "runs_dir": str(BASE / "runs"),
+        "base_dir": str(BASE),
     }
 
     try:
