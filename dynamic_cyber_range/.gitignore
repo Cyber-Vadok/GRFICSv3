@@ -1,0 +1,4 @@
+runs/
+config/models.env
+__pycache__/
+*.pyc
