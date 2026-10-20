@@ -100,6 +100,36 @@ lab is correctly started and wired. Each run writes a `transcript.jsonl` and a
 
 ---
 
+## Objective-based scenarios (one goal per run)
+
+A real attacker pursues ONE precise crown-jewel objective. Those objectives live
+in [`scenarios/objectives.yaml`](scenarios/objectives.yaml) (grouped by MITRE
+ATT&CK for ICS tactic), and [`scenarios/gen_scenarios.py`](scenarios/gen_scenarios.py)
+stamps out, for each one, a matched pair:
+
+- `scenarios/generated/<id>_static.yaml` — **Red only** (paper's *Cyber Range*)
+- `scenarios/generated/<id>_dynamic.yaml` — **Red + Blue** (paper's *Dynamic Cyber Range*)
+
+The Red brief states the **goal only** (no map, no IPs) — the attacker still has to
+discover the environment. Objectives span: A physical impact (rupture, stuck valve,
+stealthy quality sabotage, forced trip), B loss of view (falsify HMI), C inhibit
+safety, D covert persistence, E control-logic theft, F compromise EWS / defeat
+monitoring, G OT extortion.
+
+```bash
+python3 scenarios/gen_scenarios.py                         # (re)generate after editing objectives.yaml
+ls scenarios/generated                                     # the 2 x N scenario files
+# run one goal, static then dynamic, and compare the metrics:
+python3 run.py scenarios/generated/A1_physical_catastrophe_static.yaml  --mock --plant-flags
+python3 run.py scenarios/generated/A1_physical_catastrophe_dynamic.yaml --mock --plant-flags
+```
+
+Running a goal `static` vs `dynamic` on the same infrastructure is exactly the
+paper's comparison: the drop in attacker success between the two is the defender's
+contribution.
+
+---
+
 ## Flags & metrics
 
 The paper scores attacker success with **discrete flags** (PRO Labs / MHBench
