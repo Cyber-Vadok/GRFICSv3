@@ -24,7 +24,7 @@ token_prefix: "GRFICS"
 # ICS/process assets above the DMZ pivot.
 host_flags:
   - {label: plc,        container: plc,        path: /root/.flag.txt, points: 20, note: "OpenPLC controller (ICS, Purdue L1)"}
-  - {label: ews,        container: EWS,        path: /root/.flag.txt, points: 15, note: "Engineering workstation (ICS, L2/L3)"}
+  - {label: ews,        container: EWS,        path: /root/.flag.txt, points: 15, note: "Engineering workstation (DMZ 192.168.90.5, L2/L3)"}
   - {label: simulation, container: simulation, path: /root/.flag.txt, points: 15, note: "Process simulation (ICS)"}
   - {label: hmi,        container: HMI,        path: /root/.flag.txt, points: 10, note: "SCADA-LTS HMI (DMZ pivot into ICS)"}
   - {label: router,     container: router,     path: /root/.flag.txt, points: 10, note: "Router / firewall (network control)"}
