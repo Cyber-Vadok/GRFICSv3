@@ -32,7 +32,7 @@ range:
     - {name: router,     ip: 192.168.95.200, zone: dmz/ics, role: router + firewall}
     - {name: plc,        ip: 192.168.95.2,   zone: ics, role: OpenPLC (Modbus/502, web/8080)}
     - {name: simulation, ip: 192.168.95.45,  zone: ics, role: chemical process simulation}
-    - {name: EWS,        ip: 192.168.90.5,   zone: dmz, role: engineering workstation}
+    - {name: EWS,        ip: 192.168.95.5,   zone: ics, role: engineering workstation}
 
 red:
   model_env: RED_MODEL
