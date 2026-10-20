@@ -33,6 +33,12 @@ ISO (YYYY-MM-DD). This file is updated on every repo change.
   topology this fork tracks. (The transient DMZ placement matched a separate,
   host-specific deployment that this fork does not target.)
 
+#### Docs
+- Added this `CHANGELOG.md` and started documenting every repo change.
+- Refreshed the README Layout section (now lists `CHANGELOG.md`, `objectives.yaml`,
+  `gen_scenarios.py` and `scenarios/generated/`); README asymmetry, objectives and
+  flags/metrics sections brought in line with the code.
+
 ### 2026-10-19
 
 #### Added

@@ -227,6 +227,7 @@ Scenario file knobs: `blue.strategy` (`chokepoint` / `per-machine` /
 ```
 dynamic_cyber_range/
 ├── run.py                       # entry point (handles --mock, models, base-url)
+├── CHANGELOG.md                 # every repo change, newest first
 ├── dcr/
 │   ├── llm.py                   # OpenAI-compatible client (stdlib urllib)
 │   ├── prompts.py               # Red (APT) + Blue (Defender) system prompts
@@ -235,7 +236,11 @@ dynamic_cyber_range/
 │   └── runner.py                # static / dynamic orchestration + transcripts
 ├── mock_model/mock_server.py    # tiny OpenAI-compatible mock model (stdlib http.server)
 ├── flags/                       # flag manifest + plant/clear scripts (the scoring surface)
-├── scenarios/                   # the two scenario definitions
+├── scenarios/
+│   ├── scenario1_static_red.yaml, scenario2_dynamic_redblue.yaml  # base scenarios
+│   ├── objectives.yaml          # adversary objective catalog (one goal each)
+│   ├── gen_scenarios.py         # generates per-objective static/dynamic pairs
+│   └── generated/               # 2 × N generated objective scenarios
 ├── config/models.example.env    # Qwen / endpoint settings template
 └── runs/                        # per-run transcripts + summaries + metrics (gitignored)
 ```
