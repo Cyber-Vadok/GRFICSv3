@@ -71,10 +71,13 @@ def _one_turn(agent: Agent, executor: Executor, tx: Transcript) -> None:
         return
 
     reply = agent.ask()
+    reasoning = agent.last_reasoning
+    if reasoning:
+        _say(agent.role, "reason", reasoning.replace("\n", " ")[:200])
     action = parse_action(reply)
     if action is None:
-        _say(agent.role, "no-action", reply.strip()[:160])
-        tx.log(role=agent.role, turn=agent.turns, kind="no_action", message=reply)
+        _say(agent.role, "no-action", reply.strip()[:160] or "(empty content - thinking may have used all max_tokens)")
+        tx.log(role=agent.role, turn=agent.turns, kind="no_action", message=reply, reasoning=reasoning)
         agent.observe("No valid ```action block found. Emit exactly one action block.")
         return
 
@@ -85,7 +88,7 @@ def _one_turn(agent: Agent, executor: Executor, tx: Transcript) -> None:
 
     observation, finished = executor.run(agent.role, action)
     tx.log(role=agent.role, turn=agent.turns, kind="action", action=action,
-           observation=observation, finished=finished)
+           observation=observation, finished=finished, reasoning=reasoning)
     _say(agent.role, "obs", observation.replace("\n", " ")[:200])
 
     if finished:
@@ -117,9 +120,16 @@ def run(scenario: dict, options: dict) -> pathlib.Path:
         k: options[k] for k in ("base_url", "red_model", "blue_model", "dry_run")})
 
     executor = Executor(scenario, dry_run=dry_run)
+    temperature = float(options.get("temperature", 0.6))
+    # reasoning: CLI overrides scenario; scenario key `reasoning:` else default "log".
+    reasoning_mode = options.get("reasoning_mode") or scenario.get("reasoning", "log")
+    cli_max = options.get("max_tokens")
+    max_tokens = int(cli_max) if cli_max else int(scenario.get("limits", {}).get("max_tokens", 4096))
+    _say("sys", "reasoning", f"mode={reasoning_mode}, max_tokens={max_tokens}")
+
     red_client = LLMClient(base_url, api_key)
     red = Agent("red", options["red_model"], red_system_prompt(scenario), red_client,
-                temperature=float(options.get("temperature", 0.6)))
+                temperature=temperature, max_tokens=max_tokens, reasoning_mode=reasoning_mode)
     red.kickoff(scenario["red"]["operator_message"])
 
     if mode == "static":
@@ -128,7 +138,8 @@ def run(scenario: dict, options: dict) -> pathlib.Path:
     elif mode == "dynamic":
         blue_client = LLMClient(base_url, api_key)
         blue = Agent("blue", options["blue_model"], blue_system_prompt(scenario),
-                     blue_client, temperature=float(options.get("temperature", 0.6)))
+                     blue_client, temperature=temperature, max_tokens=max_tokens,
+                     reasoning_mode=reasoning_mode)
         blue.kickoff(scenario["blue"]["operator_message"])
 
         head_start = int(scenario.get("blue", {}).get("head_start_turns", 2))
@@ -183,6 +194,8 @@ def _write_summary(run_dir: pathlib.Path, scenario: dict, tx: Transcript, m: dic
         for e in actions:
             a = e["action"]
             lines.append(f"- `{a.get('tool')}` — {a.get('rationale','').strip()[:110]}")
+            if e.get("reasoning"):
+                lines.append(f"    _reasoning:_ {e['reasoning'].strip()[:400].replace(chr(10), ' ')}")
             if a.get("tool") == "report":
                 lines.append(f"    > {a.get('args',{}).get('text','').strip()[:300]}")
             if e.get("finished"):

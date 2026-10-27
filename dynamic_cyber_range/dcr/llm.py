@@ -9,6 +9,7 @@ runs on a resource-limited machine without `pip install`.
 from __future__ import annotations
 
 import json
+import re
 import ssl
 import urllib.error
 import urllib.request
@@ -16,6 +17,10 @@ import urllib.request
 
 class LLMError(RuntimeError):
     pass
+
+
+# Inline reasoning some models emit in the content: <think>...</think>.
+_THINK_RE = re.compile(r"<think>(.*?)</think>\s*", re.DOTALL | re.IGNORECASE)
 
 
 class LLMClient:
@@ -36,8 +41,10 @@ class LLMClient:
         messages: list[dict],
         *,
         temperature: float = 0.6,
-        max_tokens: int = 1536,
-    ) -> str:
+        max_tokens: int = 4096,
+    ) -> tuple[str, str | None]:
+        """Return (content, reasoning). `reasoning` is None unless the model
+        exposed its thinking (dedicated field or inline <think>...</think>)."""
         payload = {
             "model": model,
             "messages": messages,
@@ -69,9 +76,19 @@ class LLMClient:
 
         try:
             obj = json.loads(body)
-            return obj["choices"][0]["message"]["content"] or ""
+            msg = obj["choices"][0]["message"]
         except (ValueError, KeyError, IndexError) as exc:
             raise LLMError(f"Unexpected response shape: {body[:500]}") from exc
+        content = msg.get("content") or ""
+        # vLLM exposes thinking as reasoning_content, Ollama as reasoning; some
+        # models leave it inline as <think>...</think> in the content.
+        reasoning = msg.get("reasoning_content") or msg.get("reasoning") or ""
+        if not reasoning and "<think>" in content.lower():
+            m = _THINK_RE.search(content)
+            if m:
+                reasoning = m.group(1).strip()
+                content = _THINK_RE.sub("", content, count=1).strip()
+        return content, (reasoning.strip() or None if reasoning else None)
 
     def ping(self) -> bool:
         """True if {base_url}/models answers."""

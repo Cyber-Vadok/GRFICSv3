@@ -6,6 +6,24 @@ ISO (YYYY-MM-DD). This file is updated on every repo change.
 
 ## [Unreleased] — branch `feature/dynamic-cyber-range`
 
+### 2026-10-27
+
+#### Added
+- **Reasoning logging** with a three-way mode. `llm.py` now captures the model's
+  thinking (vLLM `reasoning_content`, Ollama `reasoning`, or inline `<think>…</think>`),
+  strips it from the answer, and returns it separately. New `--reasoning` flag
+  (and scenario key `reasoning:`):
+  - `log` (default): capture the reasoning into the transcript (`reasoning` field) +
+    a live `[role] reason: …` preview and a `_reasoning:_` line in `summary.md`;
+  - `off`: suppress thinking at the source (`/no_think` soft switch) — faster;
+  - `ignore`: let the model think but discard the reasoning.
+- `--max-tokens` flag (and `limits.max_tokens`); default raised 1536 → 4096 so a
+  heavy thinker doesn't spend all tokens in `<think>` and return empty content.
+
+#### Changed
+- Red/Blue prompt: the model may reason first (incl. a `<think>` block) but the
+  message must still end with the `action` block.
+
 ### 2026-10-20
 
 #### Added

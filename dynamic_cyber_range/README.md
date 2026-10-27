@@ -215,10 +215,18 @@ Use the **exact** model id your server advertises at `GET /v1/models`.
 | `--red-model` / `--blue-model` | model ids (env: `RED_MODEL` / `BLUE_MODEL`) |
 | `--temperature` | sampling temperature (default 0.6) |
 | `--max-steps N` | override `limits.max_turns_per_agent` |
+| `--reasoning {log,off,ignore}` | `log` (default): capture the model's thinking into the transcript; `off`: tell it not to think (faster, via `/no_think`); `ignore`: let it think but drop it |
+| `--max-tokens N` | tokens per reply (default 4096; raise for heavy thinkers so the answer isn't truncated inside `<think>`) |
 
-Scenario file knobs: `blue.strategy` (`chokepoint` / `per-machine` /
-`hostmanager`) with `blue.manage_containers`, `blue.head_start_turns`, and
-`limits.{max_turns_per_agent,shell_timeout_sec,observation_char_limit}`.
+Reasoning shows live as `[role] reason: …`, lands in `transcript.jsonl` (field
+`reasoning`) and in `summary.md`. A thinking model (e.g. Qwen3) returns empty
+`content` if it hits `max_tokens` mid-`<think>` — raise `--max-tokens` or use
+`--reasoning off`.
+
+Scenario file knobs: `reasoning:` (`log`/`off`/`ignore`), `blue.strategy`
+(`chokepoint` / `per-machine` / `hostmanager`) with `blue.manage_containers`,
+`blue.head_start_turns`, and
+`limits.{max_turns_per_agent,shell_timeout_sec,observation_char_limit,max_tokens}`.
 
 ---
 

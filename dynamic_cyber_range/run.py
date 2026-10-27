@@ -68,6 +68,12 @@ def main():
     ap.add_argument("--mock-port", type=int, default=MOCK_DEFAULT_PORT)
     ap.add_argument("--max-steps", type=int, default=None,
                     help="override limits.max_turns_per_agent in the scenario")
+    ap.add_argument("--reasoning", choices=["log", "off", "ignore"], default="log",
+                    help="log: capture the model's thinking into the transcript; "
+                         "off: tell the model not to think (faster); "
+                         "ignore: let it think but discard the reasoning")
+    ap.add_argument("--max-tokens", type=int, default=None,
+                    help="max tokens per model reply (default 4096; raise for heavy thinking)")
     ap.add_argument("--plant-flags", action="store_true",
                     help="(re)plant fresh flag tokens into the containers before running")
     args = ap.parse_args()
@@ -105,6 +111,8 @@ def main():
         "dry_run": args.dry_run,
         "runs_dir": str(BASE / "runs"),
         "base_dir": str(BASE),
+        "reasoning_mode": args.reasoning,
+        "max_tokens": args.max_tokens,
     }
 
     try:

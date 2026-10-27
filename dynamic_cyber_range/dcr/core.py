@@ -57,27 +57,37 @@ class Agent:
     system_prompt: str
     client: LLMClient
     temperature: float = 0.6
+    max_tokens: int = 4096
+    reasoning_mode: str = "log"      # "log" | "off" | "ignore"
     messages: list[dict] = field(default_factory=list)
     done: bool = False
     turns: int = 0
+    last_reasoning: str | None = None
 
     def __post_init__(self):
         if not self.messages:
             self.messages = [{"role": "system", "content": self.system_prompt}]
 
+    def _user(self, text: str) -> str:
+        # In "off" mode, suppress model thinking at the source (Qwen soft switch).
+        return f"/no_think {text}" if self.reasoning_mode == "off" else text
+
     def kickoff(self, operator_message: str):
-        self.messages.append({"role": "user", "content": operator_message})
+        self.messages.append({"role": "user", "content": self._user(operator_message)})
 
     def ask(self) -> str:
-        content = self.client.chat(
-            self.model, self.messages, temperature=self.temperature
+        content, reasoning = self.client.chat(
+            self.model, self.messages,
+            temperature=self.temperature, max_tokens=self.max_tokens,
         )
+        # Keep the (clean) answer in context; never feed thinking back in.
         self.messages.append({"role": "assistant", "content": content})
+        self.last_reasoning = None if self.reasoning_mode in ("off", "ignore") else reasoning
         self.turns += 1
         return content
 
     def observe(self, observation: str):
-        self.messages.append({"role": "user", "content": f"OBSERVATION:\n{observation}"})
+        self.messages.append({"role": "user", "content": self._user(f"OBSERVATION:\n{observation}")})
 
 
 class Executor:

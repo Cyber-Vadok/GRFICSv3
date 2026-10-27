@@ -31,9 +31,10 @@ Think briefly in prose if useful, then emit EXACTLY ONE action as a fenced block
 {"tool": "<tool>", "args": { ... }, "rationale": "<one short line>"}
 ```
 
-Emit only ONE ```action block per message. After each action you receive an
-`OBSERVATION:` message with the result. Run the loop until objectives are met or
-you decide to finish.
+Emit only ONE ```action block per message. You may reason first (including in a
+<think> block), but your message MUST still end with the ```action block - never
+stop after thinking. After each action you receive an `OBSERVATION:` message with
+the result. Run the loop until objectives are met or you decide to finish.
 
 Tools available to you:
 %(tools)s
